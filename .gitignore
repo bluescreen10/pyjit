@@ -1,0 +1,13 @@
+build/
+dist/
+a.*
+.venv/
+.eggs/
+.mypy_cache/
+.pytest_cache/
+.vscode/
+*.egg-info
+*.so
+.python-version
+__pycache__/
+*.o
