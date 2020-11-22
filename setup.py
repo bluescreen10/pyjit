@@ -17,7 +17,7 @@ setup(
     author="Mariano Wahlmann",
     author_email="dichoso@gmail.com",
     packages=find_packages(),
-    ext_modules=[Extension("pyjit", ["pyjit/pyjit.c"])],
+    ext_modules=[Extension("pyjit", sources=["pyjit/pyjit.c", "pyjit/pyjitcomp.c"], include_dirs=["./include"])],
     # test_suite='setup.my_test_suite',
     setup_requires=[
         "pytest-runner",
