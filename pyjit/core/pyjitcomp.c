@@ -84,16 +84,45 @@ bool emit_unary_not(int fd) {
 }
 
 bool emit_load_global(int fd, int oparg) {
-    // WRITE(fd, "r%d = PyTuple_GetItem(code->co_names, %d);", *stack_depth + 1, oparg);
-    // WRITE(fd, "r%d = PyObject_GetItem(frame->f_globals, r%d);", *stack_depth, *stack_depth + 1);
-    // WRITE(fd, "if (r%d == NULL){", *stack_depth);
-    // WRITE(fd, "r%d = PyObject_GetItem(frame->f_builtins, r%d);", *stack_depth, *stack_depth + 1);
-    // WRITE(fd, "}", );
-    //TODO: goto eror
+    WRITE(fd,
+        "{ PyObject *name = PyTuple_GetItem(frame->f_code->co_names, %d);"
+        "if (PyDict_CheckExact(frame->f_globals) && PyDict_CheckExact(frame->f_builtins)) {"
+        "   acc = _PyDict_LoadGlobal((PyDictObject *)frame->f_globals,"
+        "                           (PyDictObject *)frame->f_builtins,"
+        "                            name);"
+        // TOOD: Error handling
+        "} else {"
+        "  acc = PyObject_GetItem(frame->f_globals, name);"
+        // TODO: Error handling
+        "  if (acc == NULL) {"
+        "    acc = PyObject_GetItem(frame->f_builtins, name);"
+        // TODO: Error handling
+        "  }"
+        "}"
+        "Py_INCREF(acc);"
+        PUSH_ACC()
+        "}"
+        , oparg);
     return true;
 }
 
 bool emit_call_function(int fd, int oparg) {
+    WRITE(fd,
+        "{"
+        "  PyObject **pfunc = (sp) - %d - 1;"
+        "  PyObject *func = *pfunc;"
+        "  PyObject **stack = (sp) - %d;"
+        "  PyObject* res = PyObject_Vectorcall(func, stack, %d | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);"
+        //TODO: Error handling
+        "  while(sp > pfunc) {"
+        POP_ACC()
+        "  Py_DECREF(acc);"
+        " }"
+        PUSH("res")
+        "}"
+        //TODO: Error handling
+        , oparg, oparg, oparg
+    );
     return true;
 }
 
@@ -136,14 +165,6 @@ bool emit_body(int fd, PyCodeObject* code) {
     return true;
 }
 
-PyObject* import_name(const char* module_name, const char* function_name) {
-    PyObject* name = PyUnicode_FromString(module_name);
-    PyObject* module = PyImport_Import(name);
-    Py_DECREF(name);
-
-    return PyObject_GetAttrString(module, function_name);
-}
-
 bool pyjit_compile(PyCodeObject* code) {
     bool result;
     char filename[] = "funcXXXXXX.c";
@@ -154,20 +175,9 @@ bool pyjit_compile(PyCodeObject* code) {
         return false;
     }
 
-    PyObject* func = import_name("pyjit.compile", "compile");
-    PyObject* args1 = Py_BuildValue("(O)", code);
-    PyObject* kwargs = NULL;
-    PyGILState_STATE state = PyGILState_Ensure();
-    PyObject* res = PyObject_Call(func, args1, kwargs);
-    const char* c_code = PyUnicode_AsUTF8(res);
-    printf("Code: %s\n", c_code);
-    Py_DECREF(args1);
-    Py_XDECREF(kwargs);
-    Py_DECREF(res);
     EVAL(emit_header(fd));
     EVAL(emit_body(fd, code));
     EVAL(emit_footer(fd));
-    PyGILState_Release(state);
     close(fd);
 
     char* args[] = { "-v", "-Os","-DNDEBUG", "-Wall", "-shared", "-undefined", "dynamic_lookup",
@@ -187,3 +197,6 @@ exec_process(char* path, char* argv[]) {
     wait(&pid);
     return 0;
 }
+// 2           0 LOAD_GLOBAL              0 (b)
+//2 CALL_FUNCTION            0
+// 4 RETURN_VALUE

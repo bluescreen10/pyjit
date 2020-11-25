@@ -1,10 +1,8 @@
 import pyjit
-
-pyjit.disable()
+import datetime
 
 
 def test_const_return():
-    pyjit.enable()
     for _ in range(0, 1001):
         assert const_function() == True
 
