@@ -2,13 +2,7 @@ import subprocess
 from setuptools import setup, find_packages, Extension
 import sysconfig
 
-
-def llvm_compile_args():
-    cflags = subprocess.check_output(["llvm-config", "--cflags"]).decode("utf8").strip().split(" ")
-    cflags.extend(["-Wno-nullability-completeness"])
-
-    return cflags
-
+# from Cython.Build import cythonize
 
 setup(
     name="pyjit",
@@ -16,9 +10,10 @@ setup(
     description="CPython JIT module",
     author="Mariano Wahlmann",
     author_email="dichoso@gmail.com",
+    ext_modules=[
+        Extension("pyjit.core", sources=["pyjit/core/pyjit.c", "pyjit/core/pyjitcomp.c"], include_dirs=["./include"])
+    ],
     packages=find_packages(),
-    ext_modules=[Extension("pyjit", sources=["pyjit/pyjit.c", "pyjit/pyjitcomp.c"], include_dirs=["./include"])],
-    # test_suite='setup.my_test_suite',
     setup_requires=[
         "pytest-runner",
     ],

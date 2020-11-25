@@ -136,6 +136,14 @@ bool emit_body(int fd, PyCodeObject* code) {
     return true;
 }
 
+PyObject* import_name(const char* module_name, const char* function_name) {
+    PyObject* name = PyUnicode_FromString(module_name);
+    PyObject* module = PyImport_Import(name);
+    Py_DECREF(name);
+
+    return PyObject_GetAttrString(module, function_name);
+}
+
 bool pyjit_compile(PyCodeObject* code) {
     bool result;
     char filename[] = "funcXXXXXX.c";
@@ -146,10 +154,20 @@ bool pyjit_compile(PyCodeObject* code) {
         return false;
     }
 
+    PyObject* func = import_name("pyjit.compile", "compile");
+    PyObject* args1 = Py_BuildValue("(O)", code);
+    PyObject* kwargs = NULL;
+    PyGILState_STATE state = PyGILState_Ensure();
+    PyObject* res = PyObject_Call(func, args1, kwargs);
+    const char* c_code = PyUnicode_AsUTF8(res);
+    printf("Code: %s\n", c_code);
+    Py_DECREF(args1);
+    Py_XDECREF(kwargs);
+    Py_DECREF(res);
     EVAL(emit_header(fd));
     EVAL(emit_body(fd, code));
     EVAL(emit_footer(fd));
-
+    PyGILState_Release(state);
     close(fd);
 
     char* args[] = { "-v", "-Os","-DNDEBUG", "-Wall", "-shared", "-undefined", "dynamic_lookup",

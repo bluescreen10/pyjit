@@ -9,7 +9,11 @@
 #include <unistd.h>
 #include "pyjitcomp.h" 
 
+#define DEFAULT_COMPILE_THRESHOLD 1000
 
+static PyObject* pyjit_disable(void);
+static PyObject* pyjit_enable(void);
+static PyObject* pyjit_compile_threshold(PyObject*, PyObject*);
 typedef PyObject* (*pyjit_func)(PyThreadState*, PyFrameObject*, int);
 
 typedef struct {
