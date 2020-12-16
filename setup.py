@@ -2,8 +2,6 @@ import subprocess
 from setuptools import setup, find_packages, Extension
 import sysconfig
 
-# from Cython.Build import cythonize
-
 setup(
     name="pyjit",
     version="0.0.1",
@@ -11,13 +9,13 @@ setup(
     author="Mariano Wahlmann",
     author_email="dichoso@gmail.com",
     ext_modules=[
-        Extension("pyjit.core", sources=["pyjit/core/pyjit.c", "pyjit/core/pyjitcomp.c"], include_dirs=["./include"])
+        Extension(
+            "pyjit.core",
+            sources=["pyjit/core/pyjit.c", "pyjit/core/pyjitcomp.c"],
+            include_dirs=["./include"],
+        ),
     ],
     packages=find_packages(),
-    setup_requires=[
-        "pytest-runner",
-    ],
-    tests_require=[
-        "pytest",
-    ],
+    setup_requires=["pytest-runner", "pycparser"],
+    tests_require=["pytest"],
 )

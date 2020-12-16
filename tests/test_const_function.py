@@ -4,26 +4,22 @@ from datetime import datetime
 
 def test(n=1002):
     for _ in range(0, n):
-        assert function() == True
+        assert const_function() == True
 
 
-def function():
-    return function2(False)
-
-
-def function2(val):
-    return not val
+def const_function():
+    return True
 
 
 if __name__ == "__main__":
     test()
-
     iterations = 10 ** 8
+
     start = datetime.now()
     test(iterations)
     ellapsed_pyjit = datetime.now() - start
-    pyjit.disable()
 
+    pyjit.disable()
     start = datetime.now()
     test(iterations)
     ellapsed_cpython = datetime.now() - start
