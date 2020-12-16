@@ -645,14 +645,13 @@ const char *pyjit_compile(PyFrameObject *frame, const char *tempdir) {
     return NULL;
   };
 
-  char *args[] = {
-      "-O2", "-I./include", "-fPIC", "-shared",
-      //"-dynamiclib",
-      "-I/Users/mariano.wahlmann/.pyenv/versions/3.9.0/include/python3.9",
-      "-L/Users/mariano.wahlmann/.pyenv/versions/3.9.0/lib",
-      //"-lpython3.9",
-      "-Wl,-export_dynamic", "-Wl,-undefined", "-Wl,dynamic_lookup", "-w", "-o",
-      library, filename, NULL};
+  char *args[] = {"-O2", "-I./include", "-fPIC", "-shared",
+                  //"-dynamiclib",
+                  "-I~/.pyenv/versions/3.9.0/include/python3.9",
+                  "-L~/.pyenv/versions/3.9.0/lib",
+                  //"-lpython3.9",
+                  "-Wl,-export_dynamic", "-Wl,-undefined", "-Wl,dynamic_lookup",
+                  "-w", "-o", library, filename, NULL};
   exec_process("/usr/bin/clang", args);
   // unlink(filename);
   char *file = malloc(strlen(library) + 1);
